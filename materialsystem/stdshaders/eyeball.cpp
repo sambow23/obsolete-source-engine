@@ -23,7 +23,7 @@ BEGIN_VS_SHADER( Eyeball, "Help for EyeBall" )
 	SHADER_FALLBACK
 	{
 		// This should be a dead shader...
-		return "Wireframe";
+		return "VertexLitGeneric_DX6";
 	}
 
 	SHADER_INIT

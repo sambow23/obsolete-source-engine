@@ -12,8 +12,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-DEFINE_FALLBACK_SHADER( Eyes, Eyes_dx6 )
-
 BEGIN_VS_SHADER( Eyes_dx6, 
 			  "Help for Eyes" )
 			  

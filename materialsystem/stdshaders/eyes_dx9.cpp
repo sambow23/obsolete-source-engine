@@ -61,7 +61,7 @@ BEGIN_VS_SHADER( Eyes_dx9, "Help for Eyes" )
 	SHADER_FALLBACK
 	{
 		if ( g_pHardwareConfig->GetDXSupportLevel() < 90 )
-			return "Eyes_dx8";
+			return "VertexLitGeneric_DX6";
 
 		return 0;
 	}

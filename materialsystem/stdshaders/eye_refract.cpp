@@ -160,7 +160,7 @@ BEGIN_VS_SHADER( EyeRefract_dx9, "Help for Eyes" )
 	{
 		if ( g_pHardwareConfig->GetDXSupportLevel() < 90 )
 		{
-			return "Eyes_dx8";
+			return "VertexLitGeneric_DX6";
 		}
 
 		return 0;
