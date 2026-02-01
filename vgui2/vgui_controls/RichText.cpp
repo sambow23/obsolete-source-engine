@@ -1296,7 +1296,7 @@ void RichText::RecalculateLineBreaks()
 		wchar_t wchBefore = 0;
 		wchar_t wchAfter = 0;
 
-		if ( i > 0 && i > lineStartIndex && i != selection0 && i-1 != selection1 )
+		if ( i > 0 && i < m_TextStream.Count() && i > lineStartIndex && i != selection0 && i-1 != selection1 )
 			wchBefore = m_TextStream[i-1];
 		if ( i < m_TextStream.Count() - 1 && i+1 != selection0 && i != selection1 )
 			wchAfter = m_TextStream[i+1];
@@ -1947,10 +1947,7 @@ void RichText::TruncateTextStream()
 
 	// renormalize the remainder of the format stream
 	for (auto &f : m_FormatStream)
-	{
-		Assert(f.textStreamIndex > cullPos);
-		f.textStreamIndex -= cullPos;
-	}
+		f.textStreamIndex = MAX(f.textStreamIndex - cullPos, 0); // RaphaelIT7: Do NOT go below 0!
 
 	// mark everything to be recalculated
 	InvalidateLineBreakStream();
