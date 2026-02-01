@@ -178,6 +178,7 @@ public:
 	
 	// Write signed or unsigned. Range is only checked in debug.
 	void			WriteUBitLong( uint32 data, int numbits, bool bCheckRange=true );
+	void			WriteUBitLong64( uint64 data, int numbits, bool bCheckRange=true );
 	void			WriteSBitLong( int32 data, int numbits );
 	
 	// Tell it whether or not the data is unsigned. If it's signed,
@@ -227,6 +228,7 @@ public:
 	void			WriteULongLong(uint64 val);
 	void			WriteFloat(float val);
 	bool			WriteBytes( const void *pBuf, intp nBytes );
+	bool			WriteBytesAligned( const void* pBuf, uint64_t nBytes );
 
 	// Returns false if it overflows the buffer.
 	bool			WriteString(const char *pStr);
@@ -437,6 +439,40 @@ BITBUF_INLINE void bf_write::WriteUBitLong( uint32 curData, int numbits, [[maybe
 	StoreLittleDWord( pOut, 0, dword1 );
 }
 
+BITBUF_INLINE void bf_write::WriteUBitLong64( uint64_t curData, int numbits, [[maybe_unused]] bool bCheckRange )
+{
+#ifdef _DEBUG
+	// Make sure it doesn't overflow.
+	if ( bCheckRange && numbits < 64 )
+	{
+		if ( curData >= ( 1ull << numbits ) )
+		{
+			CallErrorHandler( BITBUFERROR_VALUE_OUT_OF_RANGE, GetDebugName() );
+		}
+	}
+	Assert( numbits >= 0 && numbits <= 64 );
+#endif
+
+	if (GetNumBitsLeft() < numbits)
+	{
+		m_iCurBit = m_nDataBits;
+		SetOverflowFlag();
+		CallErrorHandler( BITBUFERROR_BUFFER_OVERRUN, GetDebugName() );
+		return;
+	}
+
+	uint32_t low = (uint32_t)(curData & 0xFFFFFFFFull);
+	uint32_t high = (uint32_t)(curData >> 32);
+	if ( numbits <= 32 )
+	{
+		WriteUBitLong( low, numbits, false );
+		return;
+	}
+
+	WriteUBitLong( low, 32, false );
+	WriteUBitLong( high, numbits - 32, false );
+}
+
 // writes an unsigned integer with variable bit length
 BITBUF_INLINE void bf_write::WriteUBitVar( uint32 data )
 {
@@ -563,6 +599,7 @@ public:
 
 	[[nodiscard]] uint32		ReadUBitLong( int numbits );
 	[[nodiscard]] uint32		ReadUBitLongNoInline( int numbits );
+	[[nodiscard]] uint64		ReadUBitLong64( int numbits );
 	[[nodiscard]] uint32		PeekUBitLong( int numbits );
 	[[nodiscard]] int32			ReadSBitLong( int numbits );
 
@@ -606,6 +643,8 @@ public:
 	[[nodiscard]] float			ReadFloat();
 
 	bool			ReadBytes( OUT_CAP(nBytes) void *pOut, intp nBytes);
+	bool			ReadBytesAligned( OUT_CAP(nBytes) void* pOut, uint64_t nBytes );
+
 	// dimhotepus: Bounds-safe interface.
 	template<typename T, intp nBytes>
 	bool			ReadBytes( T (&pOut)[nBytes] )
@@ -815,6 +854,27 @@ BITBUF_INLINE uint32 bf_read::ReadUBitLong( int numbits )
 	unsigned dw2 = LoadLittleDWord( (const unsigned* RESTRICT)m_pData, iWordOffset2 ) << (32 - iStartBit);
 
 	return (dw1 | dw2) & bitmask;
+}
+
+BITBUF_INLINE uint64_t bf_read::ReadUBitLong64( int numbits )
+{
+	Assert( numbits > 0 && numbits <= 64 );
+
+	if ( GetNumBitsLeft() < numbits )
+	{
+		m_iCurBit = m_nDataBits;
+		SetOverflowFlag();
+		CallErrorHandler( BITBUFERROR_BUFFER_OVERRUN, GetDebugName() );
+		return 0;
+	}
+
+	if (numbits <= 32)
+		return (uint64_t)ReadUBitLong( numbits );
+
+	uint32_t low = ReadUBitLong( 32 );
+	uint32_t high = ReadUBitLong( numbits - 32 );
+
+	return ((uint64_t)high << 32) | (uint64_t)low;
 }
 
 BITBUF_INLINE int bf_read::CompareBits( bf_read * RESTRICT other, int numbits )
