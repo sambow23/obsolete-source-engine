@@ -1108,15 +1108,16 @@ CSplitPacketEntry *NET_FindOrCreateSplitPacketEntry( const intp sock, netadr_t *
 {
 	vecSplitPacketEntries_t &splitPacketEntries = net_splitpackets[sock];
 	intp i = 0, count = splitPacketEntries.Count();
-	for ( auto &entry : splitPacketEntries )
+	CSplitPacketEntry *entry = NULL;
+	for ( i = 0; i < count; i++ )
 	{
-		if ( from->CompareAdr(entry.from) )
-			break;
+		entry = &splitPacketEntries[ i ];
+		Assert( entry );
 
-		++i;
+		if ( from->CompareAdr(entry->from) )
+			break;
 	}
 	
-	CSplitPacketEntry *entry = NULL;
 	if ( i >= count )
 	{
 		CSplitPacketEntry newentry;
@@ -1182,7 +1183,10 @@ bool NET_GetLong( const intp sock, netpacket_t *packet )
 	// High byte is packet number
 	packetNumber	= ( packetID >> 8 );	
 	// Low byte is number of total packets
-	packetCount		= ( packetID & 0xff );	
+	packetCount		= ( packetID & 0xff );
+
+	// RaphaelIT7: If it somehow becomes negative- expect crashes.
+	Assert( packetNumber >= 0 );
 
 	int nSplitSizeMinusHeader = (int)LittleShort( (short)pHeader->nSplitSize );
 	if ( nSplitSizeMinusHeader < MIN_SPLIT_SIZE ||
