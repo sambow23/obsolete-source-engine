@@ -280,9 +280,5 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 END_SHADER
 
 
-//-----------------------------------------------------------------------------
-// This allows us to use a block labelled 'Water_DX60' in the water materials
-//-----------------------------------------------------------------------------
-BEGIN_INHERITED_SHADER( Water_DX60, LightmappedGeneric_DX6, "Help for Water_DX60" )
-END_INHERITED_SHADER
+// Water_DX60 is now implemented in water_ff.cpp with proper normalmap binding.
 
