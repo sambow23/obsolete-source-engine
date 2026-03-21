@@ -27,13 +27,13 @@
 
 typedef void (*SetEyeTexGenStateFn)(int enable);
 static SetEyeTexGenStateFn s_pfnSetEyeTexGenState_ER = nullptr;
-static bool s_bTexGenLookupDone_ER = false;
 
+// Always re-resolve the function pointer each call. The binary module
+// (gmcl_RTXFixesBinary) can be unloaded and reloaded between map changes
+// while stdshader_dx6.dll persists for the whole session, so a one-time
+// cached lookup would hold a dangling pointer after the first reload.
+// GetModuleHandleA + GetProcAddress are O(1) and cheap enough per draw.
 static void EnsureTexGenHelper_ER() {
-	if (s_bTexGenLookupDone_ER)
-		return;
-	s_bTexGenLookupDone_ER = true;
-
 #ifdef _WIN64
 	HMODULE hMod = GetModuleHandleA("gmcl_RTXFixesBinary_win64.dll");
 #else
@@ -42,12 +42,8 @@ static void EnsureTexGenHelper_ER() {
 	if (hMod) {
 		s_pfnSetEyeTexGenState_ER =
 			(SetEyeTexGenStateFn)GetProcAddress(hMod, "RTX_SetEyeTexGenState");
-	}
-	if (s_pfnSetEyeTexGenState_ER) {
-		Msg("[EyeRefract_ff] Found RTX_SetEyeTexGenState helper\n");
 	} else {
-		Warning("[EyeRefract_ff] RTX_SetEyeTexGenState not found - iris may "
-				"be invisible\n");
+		s_pfnSetEyeTexGenState_ER = nullptr;
 	}
 }
 
